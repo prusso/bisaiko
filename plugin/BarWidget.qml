@@ -5,23 +5,32 @@ BarWidget {
   id: root
   moduleName: "prusso.bisaiko"
 
-  function openBtop() {
-    if (root.bar)
-      root.bar.run("omarchy-launch-floating-terminal-with-presentation btop")
+  readonly property string helperPath: decodeURIComponent(
+    Qt.resolvedUrl("bisaiko").toString().replace(/^file:\/\//, "")
+  )
+
+  function invoke(action) {
+    if (root.bar) root.bar.run("'" + helperPath.replace(/'/g, "'\\''") + "' " + action)
   }
 
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
+
+  Component.onDestruction: root.invoke("close")
 
   BarIconButton {
     id: button
     anchors.fill: parent
     bar: root.bar
     text: "󰍛"
-    tooltipText: "Bisaikō: open btop"
+    tooltipText: "Bisaikō · hover to preview · click to pin"
+
+    onTooltipHoveredChanged: {
+      root.invoke(tooltipHovered ? "enter" : "leave")
+    }
 
     onPressed: function(mouseButton) {
-      if (mouseButton === Qt.LeftButton) root.openBtop()
+      if (mouseButton === Qt.LeftButton) root.invoke("toggle")
     }
   }
 }

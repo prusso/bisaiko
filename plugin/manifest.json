@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "prusso.bisaiko",
   "name": "Bisaikō",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "prusso",
   "license": "MIT",
-  "description": "A lightweight Omarchy bar button for opening btop in a floating terminal.",
+  "description": "A hoverable, pinnable btop popup for the Omarchy bar.",
   "kinds": ["bar-widget"],
   "activation": "on-demand",
   "entryPoints": {
@@ -13,7 +13,7 @@
   },
   "barWidget": {
     "displayName": "Bisaikō",
-    "description": "Open btop in an Omarchy floating terminal.",
+    "description": "Preview btop on hover and pin it with a click.",
     "category": "System",
     "aliases": ["bisaiko", "btop", "system monitor"],
     "allowMultiple": false
