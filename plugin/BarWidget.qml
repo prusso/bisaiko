@@ -18,6 +18,13 @@ BarWidget {
 
   Component.onDestruction: root.invoke("close")
 
+  Timer {
+    id: tooltipDismissTimer
+    interval: 200
+    repeat: false
+    onTriggered: if (root.bar) root.bar.hideTooltip(button)
+  }
+
   BarIconButton {
     id: button
     anchors.fill: parent
@@ -27,6 +34,8 @@ BarWidget {
 
     onTooltipHoveredChanged: {
       root.invoke(tooltipHovered ? "enter" : "leave")
+      if (tooltipHovered) tooltipDismissTimer.restart()
+      else tooltipDismissTimer.stop()
     }
 
     onPressed: function(mouseButton) {

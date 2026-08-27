@@ -106,7 +106,6 @@ open_popup() {
 
   existing="$(client_json)"
   if [[ -n "$existing" ]]; then
-    write_state "$pinned_file" "$pin_mode"
     return 0
   fi
 
