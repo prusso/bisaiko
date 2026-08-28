@@ -82,6 +82,7 @@ open_popup() {
   local pin_mode="$1"
   local existing token popup_pid workspace
   local -a context
+  local -a terminal=(foot)
 
   existing="$(client_json)"
   if [[ -n "$existing" ]]; then
@@ -97,7 +98,11 @@ open_popup() {
   write_state "$pinned_file" "$pin_mode"
   write_state "$workspace_file" "$workspace"
 
-  setsid foot --app-id="$app_id" --title="Bisaikō" --window-size-chars=80x24 btop 9>&- >/dev/null 2>&1 &
+  if command -v footclient >/dev/null 2>&1 && [[ -S "${runtime_root}/foot.sock" ]]; then
+    terminal=(footclient --server-socket="${runtime_root}/foot.sock")
+  fi
+
+  setsid "${terminal[@]}" --app-id="$app_id" --title="Bisaikō" --window-size-chars=80x24 btop 9>&- >/dev/null 2>&1 &
   popup_pid=$!
   write_state "$pid_file" "$popup_pid"
 

@@ -10,6 +10,10 @@ to close it.
 - `btop` available on `PATH`
 - `foot`, `jq`, `flock`, and `hyprctl`
 
+For faster repeat openings, Bisaikō automatically uses Foot's socket-activated
+server when `footclient` and `$XDG_RUNTIME_DIR/foot.sock` are available. It
+falls back to launching Foot normally otherwise.
+
 ## Install locally
 
 Copy `plugin/` to `~/.config/omarchy/plugins/<your-id>.bisaiko/`, make the
