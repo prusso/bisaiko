@@ -72,34 +72,6 @@ close_popup() {
   rm -f "$pid_file" "$token_file" "$pinned_file" "$hover_file" "$workspace_file"
 }
 
-position_popup() {
-  local client="$1"
-  local address width cursor_json cursor_x monitor_json monitor_x monitor_y monitor_width monitor_scale monitor_top
-  local desired_x desired_y min_x max_x
-
-  address="$(jq -r '.address' <<< "$client")"
-  width="$(jq -r '.size[0]' <<< "$client")"
-  cursor_json="$(hyprctl cursorpos -j 2>/dev/null)"
-  cursor_x="$(jq -r '.x // 0' <<< "$cursor_json")"
-  monitor_json="$(hyprctl monitors -j 2>/dev/null | jq -c '[.[] | select(.focused == true)][0] // empty')"
-
-  [[ -n "$monitor_json" ]] || return 0
-  monitor_x="$(jq -r '.x' <<< "$monitor_json")"
-  monitor_y="$(jq -r '.y' <<< "$monitor_json")"
-  monitor_width="$(jq -r '.width' <<< "$monitor_json")"
-  monitor_scale="$(jq -r '.scale' <<< "$monitor_json")"
-  monitor_top="$(jq -r '.reserved[1] // 0' <<< "$monitor_json")"
-
-  min_x=$((monitor_x + 8))
-  max_x=$((monitor_x + monitor_width / monitor_scale - width - 8))
-  desired_x=$((cursor_x - width / 2))
-  (( desired_x < min_x )) && desired_x=$min_x
-  (( desired_x > max_x )) && desired_x=$max_x
-  desired_y=$((monitor_y + monitor_top + 8))
-
-  hyprctl dispatch "hl.dsp.window.move({ x = ${desired_x}, y = ${desired_y}, window = \"address:${address}\" })" >/dev/null 2>&1 || true
-}
-
 open_popup() {
   local pin_mode="$1"
   local existing token popup_pid workspace
@@ -142,7 +114,6 @@ watch_popup() {
     return 0
   fi
 
-  position_popup "$client"
   initial_workspace="$(read_state "$workspace_file" "")"
 
   while [[ "$(read_state "$token_file" "")" == "$expected_token" ]]; do
