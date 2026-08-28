@@ -113,7 +113,7 @@ watch_popup() {
   local expected_token="$1"
   local client="" address="" at_x=0 at_y=0 width=0 height=0
   local cursor_json cursor_x cursor_y current_workspace initial_workspace
-  local outside_ticks=0 refresh_tick=0 entered_popup=0
+  local outside_ticks=0 refresh_tick=0
 
   for _ in {1..30}; do
     [[ "$(read_state "$token_file" "")" == "$expected_token" ]] || return 0
@@ -158,11 +158,10 @@ watch_popup() {
     cursor_y="$(jq -r '.y // -1' <<< "$cursor_json")"
 
     if (( cursor_x >= at_x && cursor_x < at_x + width && cursor_y >= at_y && cursor_y < at_y + height )); then
-      entered_popup=1
       outside_ticks=0
     else
       outside_ticks=$((outside_ticks + 1))
-      if (( entered_popup == 1 || outside_ticks >= 3 )); then
+      if (( outside_ticks >= 3 )); then
         close_popup
         return 0
       fi
