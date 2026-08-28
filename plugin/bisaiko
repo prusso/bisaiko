@@ -149,7 +149,7 @@ watch_popup() {
 
     if [[ "$(read_state "$pinned_file" "0")" == "1" || "$(read_state "$hover_file" "0")" == "1" ]]; then
       outside_ticks=0
-      sleep 0.075
+      sleep 0.077
       continue
     fi
 
@@ -167,7 +167,7 @@ watch_popup() {
       fi
     fi
 
-    sleep 0.075
+    sleep 0.077
   done
 
   rm -f "$pid_file" "$token_file" "$pinned_file" "$hover_file" "$workspace_file"
