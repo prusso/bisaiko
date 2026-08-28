@@ -35,6 +35,12 @@ client_json() {
     jq -c --arg app_id "$app_id" '[.[] | select(.class == $app_id or .initialClass == $app_id)] | first // empty' 2>/dev/null
 }
 
+workspace_context() {
+  hyprctl monitors -j 2>/dev/null |
+    jq -r '[.[] | select(.focused == true)][0] |
+      (.specialWorkspace.name // ""), (.activeWorkspace.id // empty)' 2>/dev/null
+}
+
 special_workspace() {
   hyprctl monitors -j 2>/dev/null |
     jq -r '[.[] | select(.focused == true)][0].specialWorkspace.name // ""' 2>/dev/null
@@ -75,16 +81,18 @@ close_popup() {
 open_popup() {
   local pin_mode="$1"
   local existing token popup_pid workspace
+  local -a context
 
   existing="$(client_json)"
   if [[ -n "$existing" ]]; then
     return 0
   fi
 
-  [[ -z "$(special_workspace)" ]] || return 0
+  mapfile -t context < <(workspace_context)
+  [[ -z "${context[0]:-}" ]] || return 0
 
-  workspace="$(active_workspace)"
-  token="${BASHPID}-${RANDOM}-$(date +%s%N)"
+  workspace="${context[1]:-}"
+  token="${BASHPID}-${RANDOM}-${RANDOM}"
   write_state "$token_file" "$token"
   write_state "$pinned_file" "$pin_mode"
   write_state "$workspace_file" "$workspace"
