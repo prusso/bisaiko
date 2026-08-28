@@ -32,7 +32,29 @@ write_state() {
 
 client_json() {
   hyprctl clients -j 2>/dev/null |
-    jq -c --arg app_id "$app_id" '[.[] | select(.class == $app_id or .initialClass == $app_id)] | first // empty' 2>/dev/null
+    jq -c --arg app_id "$app_id" '[.[] | select(
+      .class == $app_id or ((.class // "") | startswith($app_id + ".")) or
+      .initialClass == $app_id or ((.initialClass // "") | startswith($app_id + "."))
+    )] | first // empty' 2>/dev/null
+}
+
+normalize_position() {
+  case "${1:-}" in
+    top-left|top-center|top-right|middle-left|center|middle-right|bottom-left|bottom-center|bottom-right)
+      printf '%s' "$1"
+      ;;
+    *)
+      printf 'top-right'
+      ;;
+  esac
+}
+
+normalize_poll_ms() {
+  local value="${1:-78}"
+  [[ "$value" =~ ^[0-9]+$ ]] || value=78
+  (( value < 10 )) && value=10
+  (( value > 500 )) && value=500
+  printf '%d' "$value"
 }
 
 workspace_context() {
@@ -80,6 +102,10 @@ close_popup() {
 
 open_popup() {
   local pin_mode="$1"
+  local position poll_ms popup_app_id
+  position="$(normalize_position "${2:-top-right}")"
+  poll_ms="$(normalize_poll_ms "${3:-78}")"
+  popup_app_id="${app_id}.${position}"
   local existing token popup_pid workspace
   local -a context
   local -a terminal=(foot)
@@ -102,15 +128,18 @@ open_popup() {
     terminal=(footclient --server-socket="${runtime_root}/foot.sock")
   fi
 
-  setsid "${terminal[@]}" --app-id="$app_id" --title="Bisaikō" --window-size-chars=80x24 btop 9>&- >/dev/null 2>&1 &
+  setsid "${terminal[@]}" --app-id="$popup_app_id" --title="Bisaikō" --window-size-chars=80x24 btop 9>&- >/dev/null 2>&1 &
   popup_pid=$!
   write_state "$pid_file" "$popup_pid"
 
-  setsid "$self_path" watch "$token" 9>&- >/dev/null 2>&1 &
+  setsid "$self_path" watch "$token" "$poll_ms" 9>&- >/dev/null 2>&1 &
 }
 
 watch_popup() {
   local expected_token="$1"
+  local poll_ms poll_interval
+  poll_ms="$(normalize_poll_ms "${2:-78}")"
+  printf -v poll_interval '0.%03d' "$poll_ms"
   local client="" address="" at_x=0 at_y=0 width=0 height=0
   local cursor_json cursor_x cursor_y current_workspace initial_workspace
   local outside_ticks=0 refresh_tick=0
@@ -149,7 +178,7 @@ watch_popup() {
 
     if [[ "$(read_state "$pinned_file" "0")" == "1" || "$(read_state "$hover_file" "0")" == "1" ]]; then
       outside_ticks=0
-      sleep 0.078
+      sleep "$poll_interval"
       continue
     fi
 
@@ -167,7 +196,7 @@ watch_popup() {
       fi
     fi
 
-    sleep 0.078
+    sleep "$poll_interval"
   done
 
   rm -f "$pid_file" "$token_file" "$pinned_file" "$hover_file" "$workspace_file"
@@ -180,7 +209,7 @@ case "$action" in
     (
       flock -x 9
       write_state "$hover_file" "1"
-      open_popup "0"
+      open_popup "0" "${2:-top-right}" "${3:-78}"
     ) 9>"$lock_file"
     ;;
   leave)
@@ -199,7 +228,7 @@ case "$action" in
           write_state "$pinned_file" "1"
         fi
       else
-        open_popup "1"
+        open_popup "1" "${2:-top-right}" "${3:-78}"
       fi
     ) 9>"$lock_file"
     ;;
@@ -210,7 +239,7 @@ case "$action" in
     ) 9>"$lock_file"
     ;;
   watch)
-    watch_popup "${2:-}"
+    watch_popup "${2:-}" "${3:-78}"
     ;;
   status)
     if [[ -n "$(client_json)" ]]; then

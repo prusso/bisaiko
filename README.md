@@ -2,7 +2,7 @@
 
 Bisaikō is an Omarchy bar plugin that previews `btop` in an 80×24 terminal
 anchored beneath its icon. Hover to preview it, click to pin it, and click again
-to close it.
+to close it. Right-click the icon to configure the popup and icon placement.
 
 ## Requirements
 
@@ -34,10 +34,27 @@ users can choose their own placement.
 - Move into the btop window to interact with it.
 - Move away from both the icon and window to close an unpinned preview.
 - Click the icon to pin the preview; click again to close it.
+- Right-click the icon to open Bisaikō settings.
 - Changing workspaces or opening a special/scratchpad workspace closes it.
 
+## Settings
+
+The right-click menu provides nine popup positions: all four corners, the
+middle of all four edges, and the center of the screen. It can also move the
+icon between the right-side system area and the center section beside the
+clock.
+
+Opening delay and dismissal polling are adjustable in milliseconds. The
+defaults preserve Bisaikō's tuned behavior: a 50 ms opening delay and a 78 ms
+dismissal polling interval. **Reset Bisaikō defaults** restores those timings,
+the upper-right popup position, and right-side icon placement.
+
+These preferences persist across shell reloads and logins through Quickshell's
+per-user persistent properties.
+
 The helper serializes state changes so rapid hover/click events cannot create
-multiple btop windows.
+multiple btop windows. Position-specific app IDs let Hyprland place each popup
+correctly before it is drawn, avoiding a visible post-map jump.
 
 ## Uninstall
 

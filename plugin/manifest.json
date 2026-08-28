@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "prusso.bisaiko",
   "name": "Bisaikō",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": "prusso",
   "license": "MIT",
   "description": "A hoverable, pinnable btop popup for the Omarchy bar.",
@@ -13,7 +13,7 @@
   },
   "barWidget": {
     "displayName": "Bisaikō",
-    "description": "Preview btop on hover and pin it with a click.",
+    "description": "Preview btop on hover, pin it, and configure its placement and timing.",
     "category": "System",
     "aliases": ["bisaiko", "btop", "system monitor"],
     "allowMultiple": false
