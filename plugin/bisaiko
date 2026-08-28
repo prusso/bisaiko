@@ -3,6 +3,7 @@
 set -u
 
 app_id="org.omarchy.bisaiko"
+module_name="prusso.bisaiko"
 runtime_root="${XDG_RUNTIME_DIR:-/tmp}"
 state_dir="${runtime_root}/bisaiko-${UID}"
 lock_file="${state_dir}/lock"
@@ -45,7 +46,7 @@ normalize_position() {
       printf '%s' "$1"
       ;;
     *)
-      printf 'top-right'
+      printf 'top-center'
       ;;
   esac
 }
@@ -74,8 +75,9 @@ active_workspace() {
 }
 
 bar_section() {
+  local id="${1:-$module_name}"
   [[ -r "$shell_config" ]] || return 0
-  jq -r --arg id "prusso.bisaiko" '
+  jq -r --arg id "$id" '
     ["left", "center", "right"][] as $section |
     select(any(.bar.layout[$section][]?;
       (if type == "string" then . else .id // "" end) == $id)) |
@@ -114,7 +116,7 @@ close_popup() {
 open_popup() {
   local pin_mode="$1"
   local position poll_ms popup_app_id
-  position="$(normalize_position "${2:-top-right}")"
+  position="$(normalize_position "${2:-top-center}")"
   poll_ms="$(normalize_poll_ms "${3:-80}")"
   popup_app_id="${app_id}.${position}"
   local existing token popup_pid workspace
@@ -220,7 +222,7 @@ case "$action" in
     (
       flock -x 9
       write_state "$hover_file" "1"
-      open_popup "0" "${2:-top-right}" "${3:-80}"
+      open_popup "0" "${2:-top-center}" "${3:-80}"
     ) 9>"$lock_file"
     ;;
   leave)
@@ -239,7 +241,7 @@ case "$action" in
           write_state "$pinned_file" "1"
         fi
       else
-        open_popup "1" "${2:-top-right}" "${3:-80}"
+        open_popup "1" "${2:-top-center}" "${3:-80}"
       fi
     ) 9>"$lock_file"
     ;;
@@ -260,7 +262,7 @@ case "$action" in
     fi
     ;;
   bar-section)
-    bar_section
+    bar_section "${2:-}"
     ;;
   *)
     printf 'Usage: %s {enter|leave|toggle|close|status|bar-section}\n' "${0##*/}" >&2

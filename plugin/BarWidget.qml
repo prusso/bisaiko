@@ -48,15 +48,13 @@ BarWidget {
   }
 
   function moveIcon(section) {
-    actualBarSection = section
     settingsOpen = false
-    if (!root.bar) return
-    if (section === "left")
-      root.bar.run("omarchy bar move " + root.moduleName + " --section left")
-    else if (section === "center")
-      root.bar.run("omarchy bar move " + root.moduleName + " --section center")
-    else
-      root.bar.run("omarchy bar move " + root.moduleName + " --section right")
+    if (section === root.actualBarSection || !root.bar) return
+    actualBarSection = section
+    root.bar.run("omarchy bar move " + root.moduleName + " --section " + section)
+    // Confirm against the layout Omarchy actually wrote, in case the move
+    // was rejected (e.g. the shell was not ready to answer).
+    barSectionConfirmTimer.restart()
   }
 
   function resetDefaults() {
@@ -93,7 +91,7 @@ BarWidget {
   Process {
     id: barSectionProcess
     running: false
-    command: [root.helperPath, "bar-section"]
+    command: [root.helperPath, "bar-section", root.moduleName]
 
     stdout: StdioCollector {
       waitForEnd: true
@@ -103,6 +101,13 @@ BarWidget {
           root.actualBarSection = section
       }
     }
+  }
+
+  Timer {
+    id: barSectionConfirmTimer
+    interval: 600
+    repeat: false
+    onTriggered: root.refreshBarSection()
   }
 
   Timer {

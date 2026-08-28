@@ -16,6 +16,7 @@
     "description": "Preview btop on hover, pin it, and configure its placement and timing.",
     "category": "System",
     "aliases": ["bisaiko", "btop", "system monitor"],
-    "allowMultiple": false
+    "allowMultiple": false,
+    "defaultSection": "center"
   }
 }

@@ -16,17 +16,19 @@ falls back to launching Foot normally otherwise.
 
 ## Install locally
 
-Copy `plugin/` to `~/.config/omarchy/plugins/<your-id>.bisaiko/`, make the
-`bisaiko` helper executable, and add the matching `{ "id": "<your-id>.bisaiko" }`
-to the desired bar section in `~/.config/omarchy/shell.json`.
+Copy `plugin/` to `~/.config/omarchy/plugins/prusso.bisaiko/`, make the
+`bisaiko` helper executable, and add `{ "id": "prusso.bisaiko" }` to the
+desired bar section in `~/.config/omarchy/shell.json`. To install under a
+different id, change it in all three places: the directory name, the
+`moduleName` in `BarWidget.qml`, and `module_name` in the `bisaiko` helper.
 
 Add the rule from `hyprland.lua` to the personal overrides at the bottom of
 `~/.config/hypr/hyprland.lua`. Reload Hyprland and verify that
 `hyprctl configerrors` is empty.
 
-The recommended placement is the right section, beside the other system
-indicators. The bar entry is intentionally separate from the plugin files so
-users can choose their own placement.
+The recommended placement is the center section. The bar entry is
+intentionally separate from the plugin files so users can choose their own
+placement, and the settings menu can move it later.
 
 ## Usage
 
@@ -41,13 +43,16 @@ users can choose their own placement.
 
 The right-click menu provides nine popup positions: all four corners, the
 middle of all four edges, and the center of the screen. It can also move the
-icon between the right-side system area and the center section beside the
-clock.
+icon between the bar's left, center, and right sections. The highlighted
+section is read from Omarchy's live bar layout, so it stays correct even if
+the icon is moved with `omarchy bar move` or by dragging it in the shell.
 
 Opening delay and dismissal polling are adjustable in milliseconds. The
 defaults preserve Bisaikō's tuned behavior: a 50 ms opening delay and an 80 ms
-dismissal polling interval. **Reset Bisaikō defaults** restores those timings,
-the upper-right popup position, and right-side icon placement.
+dismissal polling interval. **Reset Bisaikō defaults** restores every Bisaikō
+setting to its opinionated default: the top-center popup position, the center
+icon section, the 50 ms opening delay, and the 80 ms dismissal polling
+interval.
 
 These preferences persist across shell reloads and logins through Quickshell's
 per-user persistent properties.
