@@ -8,7 +8,7 @@ BarWidget {
   moduleName: "prusso.bisaiko"
 
   readonly property int defaultOpenDelayMs: 50
-  readonly property int defaultPollMs: 78
+  readonly property int defaultPollMs: 80
   readonly property string defaultPopupPosition: "top-right"
   readonly property string defaultBarSection: "right"
   readonly property var positionOptions: [
@@ -63,6 +63,12 @@ BarWidget {
   implicitHeight: button.implicitHeight
 
   Component.onDestruction: root.invoke("close")
+  Component.onCompleted: {
+    if (persisted.settingsVersion < 1) {
+      if (persisted.pollMs === 78) persisted.pollMs = defaultPollMs
+      persisted.settingsVersion = 1
+    }
+  }
 
   PersistentProperties {
     id: persisted
@@ -71,6 +77,7 @@ BarWidget {
     property int openDelayMs: root.defaultOpenDelayMs
     property int pollMs: root.defaultPollMs
     property string barSection: root.defaultBarSection
+    property int settingsVersion: 0
   }
 
   Timer {

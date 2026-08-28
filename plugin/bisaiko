@@ -50,8 +50,8 @@ normalize_position() {
 }
 
 normalize_poll_ms() {
-  local value="${1:-78}"
-  [[ "$value" =~ ^[0-9]+$ ]] || value=78
+  local value="${1:-80}"
+  [[ "$value" =~ ^[0-9]+$ ]] || value=80
   (( value < 10 )) && value=10
   (( value > 500 )) && value=500
   printf '%d' "$value"
@@ -104,7 +104,7 @@ open_popup() {
   local pin_mode="$1"
   local position poll_ms popup_app_id
   position="$(normalize_position "${2:-top-right}")"
-  poll_ms="$(normalize_poll_ms "${3:-78}")"
+  poll_ms="$(normalize_poll_ms "${3:-80}")"
   popup_app_id="${app_id}.${position}"
   local existing token popup_pid workspace
   local -a context
@@ -138,7 +138,7 @@ open_popup() {
 watch_popup() {
   local expected_token="$1"
   local poll_ms poll_interval
-  poll_ms="$(normalize_poll_ms "${2:-78}")"
+  poll_ms="$(normalize_poll_ms "${2:-80}")"
   printf -v poll_interval '0.%03d' "$poll_ms"
   local client="" address="" at_x=0 at_y=0 width=0 height=0
   local cursor_json cursor_x cursor_y current_workspace initial_workspace
@@ -209,7 +209,7 @@ case "$action" in
     (
       flock -x 9
       write_state "$hover_file" "1"
-      open_popup "0" "${2:-top-right}" "${3:-78}"
+      open_popup "0" "${2:-top-right}" "${3:-80}"
     ) 9>"$lock_file"
     ;;
   leave)
@@ -228,7 +228,7 @@ case "$action" in
           write_state "$pinned_file" "1"
         fi
       else
-        open_popup "1" "${2:-top-right}" "${3:-78}"
+        open_popup "1" "${2:-top-right}" "${3:-80}"
       fi
     ) 9>"$lock_file"
     ;;
@@ -239,7 +239,7 @@ case "$action" in
     ) 9>"$lock_file"
     ;;
   watch)
-    watch_popup "${2:-}" "${3:-78}"
+    watch_popup "${2:-}" "${3:-80}"
     ;;
   status)
     if [[ -n "$(client_json)" ]]; then

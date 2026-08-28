@@ -45,7 +45,7 @@ icon between the right-side system area and the center section beside the
 clock.
 
 Opening delay and dismissal polling are adjustable in milliseconds. The
-defaults preserve Bisaikō's tuned behavior: a 50 ms opening delay and a 78 ms
+defaults preserve Bisaikō's tuned behavior: a 50 ms opening delay and an 80 ms
 dismissal polling interval. **Reset Bisaikō defaults** restores those timings,
 the upper-right popup position, and right-side icon placement.
 
