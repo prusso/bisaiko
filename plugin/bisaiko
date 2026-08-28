@@ -12,6 +12,7 @@ pinned_file="${state_dir}/pinned"
 hover_file="${state_dir}/hover"
 workspace_file="${state_dir}/workspace"
 self_path="$(readlink -f "$0")"
+shell_config="${XDG_CONFIG_HOME:-${HOME}/.config}/omarchy/shell.json"
 
 mkdir -p -m 700 "$state_dir"
 
@@ -70,6 +71,16 @@ special_workspace() {
 
 active_workspace() {
   hyprctl activeworkspace -j 2>/dev/null | jq -r '.id // empty' 2>/dev/null
+}
+
+bar_section() {
+  [[ -r "$shell_config" ]] || return 0
+  jq -r --arg id "prusso.bisaiko" '
+    ["left", "center", "right"][] as $section |
+    select(any(.bar.layout[$section][]?;
+      (if type == "string" then . else .id // "" end) == $id)) |
+    $section
+  ' "$shell_config" 2>/dev/null | head -n 1
 }
 
 close_popup() {
@@ -248,8 +259,11 @@ case "$action" in
       printf 'closed\n'
     fi
     ;;
+  bar-section)
+    bar_section
+    ;;
   *)
-    printf 'Usage: %s {enter|leave|toggle|close|status}\n' "${0##*/}" >&2
+    printf 'Usage: %s {enter|leave|toggle|close|status|bar-section}\n' "${0##*/}" >&2
     exit 2
     ;;
 esac

@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import qs.Ui
 import qs.Commons
 
@@ -9,8 +10,8 @@ BarWidget {
 
   readonly property int defaultOpenDelayMs: 50
   readonly property int defaultPollMs: 80
-  readonly property string defaultPopupPosition: "top-right"
-  readonly property string defaultBarSection: "right"
+  readonly property string defaultPopupPosition: "top-center"
+  readonly property string defaultBarSection: "center"
   readonly property var positionOptions: [
     { label: "Upper left", value: "top-left" },
     { label: "Top middle", value: "top-center" },
@@ -24,6 +25,7 @@ BarWidget {
   ]
 
   property bool settingsOpen: false
+  property string actualBarSection: ""
 
   readonly property string helperPath: decodeURIComponent(
     Qt.resolvedUrl("bisaiko").toString().replace(/^file:\/\//, "")
@@ -41,14 +43,20 @@ BarWidget {
     settingsOpen = false
   }
 
+  function refreshBarSection() {
+    if (!barSectionProcess.running) barSectionProcess.running = true
+  }
+
   function moveIcon(section) {
-    persisted.barSection = section
+    actualBarSection = section
     settingsOpen = false
     if (!root.bar) return
-    if (section === "center")
-      root.bar.run("omarchy bar move " + root.moduleName + " --section center --after omarchy.clock")
+    if (section === "left")
+      root.bar.run("omarchy bar move " + root.moduleName + " --section left")
+    else if (section === "center")
+      root.bar.run("omarchy bar move " + root.moduleName + " --section center")
     else
-      root.bar.run("omarchy bar move " + root.moduleName + " --section right --after omarchy.tray")
+      root.bar.run("omarchy bar move " + root.moduleName + " --section right")
   }
 
   function resetDefaults() {
@@ -66,8 +74,11 @@ BarWidget {
   Component.onCompleted: {
     if (persisted.settingsVersion < 1) {
       if (persisted.pollMs === 78) persisted.pollMs = defaultPollMs
-      persisted.settingsVersion = 1
     }
+    if (persisted.settingsVersion < 2 && persisted.popupPosition === "top-right")
+      persisted.popupPosition = defaultPopupPosition
+    persisted.settingsVersion = 2
+    root.refreshBarSection()
   }
 
   PersistentProperties {
@@ -76,8 +87,22 @@ BarWidget {
     property string popupPosition: root.defaultPopupPosition
     property int openDelayMs: root.defaultOpenDelayMs
     property int pollMs: root.defaultPollMs
-    property string barSection: root.defaultBarSection
     property int settingsVersion: 0
+  }
+
+  Process {
+    id: barSectionProcess
+    running: false
+    command: [root.helperPath, "bar-section"]
+
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var section = text.trim()
+        if (["left", "center", "right"].indexOf(section) !== -1)
+          root.actualBarSection = section
+      }
+    }
   }
 
   Timer {
@@ -121,6 +146,7 @@ BarWidget {
         hoverOpenTimer.stop()
         tooltipDismissTimer.stop()
         root.invoke("close")
+        root.refreshBarSection()
         root.settingsOpen = !root.settingsOpen
       }
     }
@@ -194,19 +220,27 @@ BarWidget {
         spacing: Style.space(6)
 
         Button {
-          width: (parent.width - parent.spacing) / 2
-          text: "Right side"
-          selected: persisted.barSection === "right"
+          width: (parent.width - parent.spacing * 2) / 3
+          text: "Left side"
+          selected: root.actualBarSection === "left"
           foreground: root.bar.foreground
-          onClicked: root.moveIcon("right")
+          onClicked: root.moveIcon("left")
         }
 
         Button {
-          width: (parent.width - parent.spacing) / 2
-          text: "Beside clock"
-          selected: persisted.barSection === "center"
+          width: (parent.width - parent.spacing * 2) / 3
+          text: "Middle"
+          selected: root.actualBarSection === "center"
           foreground: root.bar.foreground
           onClicked: root.moveIcon("center")
+        }
+
+        Button {
+          width: (parent.width - parent.spacing * 2) / 3
+          text: "Right side"
+          selected: root.actualBarSection === "right"
+          foreground: root.bar.foreground
+          onClicked: root.moveIcon("right")
         }
       }
 
