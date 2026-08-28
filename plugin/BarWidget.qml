@@ -25,6 +25,13 @@ BarWidget {
     onTriggered: if (root.bar) root.bar.hideTooltip(button)
   }
 
+  Timer {
+    id: hoverOpenTimer
+    interval: 50
+    repeat: false
+    onTriggered: root.invoke("enter")
+  }
+
   BarIconButton {
     id: button
     anchors.fill: parent
@@ -33,13 +40,21 @@ BarWidget {
     tooltipText: "Bisaikō · hover to preview · click to pin"
 
     onTooltipHoveredChanged: {
-      root.invoke(tooltipHovered ? "enter" : "leave")
-      if (tooltipHovered) tooltipDismissTimer.restart()
-      else tooltipDismissTimer.stop()
+      if (tooltipHovered) {
+        hoverOpenTimer.restart()
+        tooltipDismissTimer.restart()
+      } else {
+        hoverOpenTimer.stop()
+        tooltipDismissTimer.stop()
+        root.invoke("leave")
+      }
     }
 
     onPressed: function(mouseButton) {
-      if (mouseButton === Qt.LeftButton) root.invoke("toggle")
+      if (mouseButton === Qt.LeftButton) {
+        hoverOpenTimer.stop()
+        root.invoke("toggle")
+      }
     }
   }
 }
