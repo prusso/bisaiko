@@ -63,6 +63,7 @@ BarWidget {
     persisted.popupPosition = defaultPopupPosition
     persisted.openDelayMs = defaultOpenDelayMs
     persisted.pollMs = defaultPollMs
+    persisted.hoverEnabled = true
     root.invoke("close")
     Qt.callLater(function() { root.moveIcon(defaultBarSection) })
   }
@@ -98,6 +99,7 @@ BarWidget {
     property string popupPosition: root.defaultPopupPosition
     property int openDelayMs: root.defaultOpenDelayMs
     property int pollMs: root.defaultPollMs
+    property bool hoverEnabled: true
     property int settingsVersion: 0
   }
 
@@ -159,8 +161,8 @@ BarWidget {
 
     onTooltipHoveredChanged: {
       if (tooltipHovered) {
-        if (!root.settingsOpen) hoverOpenTimer.restart()
-        hintTimer.restart()
+        if (persisted.hoverEnabled && !root.settingsOpen) hoverOpenTimer.restart()
+        if (persisted.hoverEnabled) hintTimer.restart()
       } else {
         hoverOpenTimer.stop()
         hintTimer.stop()
@@ -357,6 +359,23 @@ BarWidget {
         font.family: root.bar.fontFamily
         font.pixelSize: Style.font.body
         font.bold: true
+      }
+
+      Button {
+        width: parent.width
+        text: "Hover preview: " + (persisted.hoverEnabled ? "On" : "Off")
+        selected: persisted.hoverEnabled
+        foreground: root.bar.foreground
+        onClicked: {
+          persisted.hoverEnabled = !persisted.hoverEnabled
+          if (!persisted.hoverEnabled) {
+            hoverOpenTimer.stop()
+            hintTimer.stop()
+            hintDismissTimer.stop()
+            root.hintShown = false
+            root.invoke("leave")
+          }
+        }
       }
 
       Row {

@@ -73,6 +73,10 @@ setting to its opinionated default: the top-center popup position, the center
 icon section, the 50 ms opening delay, and the 80 ms dismissal polling
 interval.
 
+Hover preview can be turned off in the settings menu when you prefer to open
+Bisaikō only with a click. Clicking the icon still toggles the popup while
+hover preview is disabled.
+
 These preferences persist across shell reloads and logins through Quickshell's
 per-user persistent properties.
 
