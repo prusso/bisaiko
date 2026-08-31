@@ -39,6 +39,10 @@ placement, and the settings menu can move it later.
 - Right-click the icon to open Bisaikō settings.
 - Changing workspaces or opening a special/scratchpad workspace closes it.
 
+Leave the pointer over the icon for about 800 ms to reveal a controls hint.
+This works every time, while quick hovers retain the configured fast opening
+delay and remain uncluttered.
+
 ## Settings
 
 The right-click menu provides nine popup positions: all four corners, the

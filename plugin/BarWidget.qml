@@ -10,6 +10,7 @@ BarWidget {
 
   readonly property int defaultOpenDelayMs: 50
   readonly property int defaultPollMs: 80
+  readonly property int dwellHintRequestMs: 400
   readonly property string defaultPopupPosition: "top-center"
   readonly property string defaultBarSection: "center"
   readonly property var positionOptions: [
@@ -117,6 +118,16 @@ BarWidget {
     onTriggered: if (root.bar) root.bar.hideTooltip(button)
   }
 
+  // The shell adds its own 400 ms tooltip delay. Requesting the hint after
+  // another 400 ms makes it a repeatable, deliberate-hover affordance without
+  // slowing the 50 ms btop preview.
+  Timer {
+    id: dwellHintTimer
+    interval: root.dwellHintRequestMs
+    repeat: false
+    onTriggered: if (root.bar) root.bar.showTooltip(button, button.tooltipText)
+  }
+
   Timer {
     id: hoverOpenTimer
     interval: persisted.openDelayMs
@@ -129,20 +140,23 @@ BarWidget {
     anchors.fill: parent
     bar: root.bar
     text: "󰍛"
-    tooltipText: "Bisaikō · hover to preview · click to pin"
+    tooltipText: "Bisaikō\nHover to preview · Click to pin · Right-click for settings"
 
     onTooltipHoveredChanged: {
       if (tooltipHovered) {
         if (!root.settingsOpen) hoverOpenTimer.restart()
         tooltipDismissTimer.restart()
+        if (!root.settingsOpen) dwellHintTimer.restart()
       } else {
         hoverOpenTimer.stop()
         tooltipDismissTimer.stop()
+        dwellHintTimer.stop()
         root.invoke("leave")
       }
     }
 
     onPressed: function(mouseButton) {
+      dwellHintTimer.stop()
       if (mouseButton === Qt.LeftButton) {
         hoverOpenTimer.stop()
         root.settingsOpen = false
@@ -150,6 +164,7 @@ BarWidget {
       } else if (mouseButton === Qt.RightButton) {
         hoverOpenTimer.stop()
         tooltipDismissTimer.stop()
+        if (root.bar) root.bar.hideTooltip(button)
         root.invoke("close")
         root.refreshBarSection()
         root.settingsOpen = !root.settingsOpen
