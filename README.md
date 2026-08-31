@@ -50,6 +50,8 @@ placement, and the settings menu can move it later.
 - Move into the btop window to interact with it.
 - Move away from both the icon and window to close an unpinned preview.
 - Click the icon to pin the preview; click again to close it.
+- When hover preview is disabled, click once to open an unpinned preview, click
+  again to pin it, click again to unpin it, and click once more to close it.
 - Right-click the icon to open Bisaikō settings.
 - Changing workspaces or opening a special/scratchpad workspace closes it.
 

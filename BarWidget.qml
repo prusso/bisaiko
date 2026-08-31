@@ -26,8 +26,20 @@ BarWidget {
 
   property bool settingsOpen: false
   property bool hintShown: false
+  property int clickState: 0 // 0 closed, 1 open, 2 pinned, 3 unpinned
+  property bool hoverPinned: false
   property string actualBarSection: ""
-  readonly property string controlsHint: "Click to pin · Right-click for settings"
+  readonly property string controlsHint: persisted.hoverEnabled
+    ? (root.hoverPinned
+      ? "Click again to close · Right-click for settings"
+      : "Click to pin · Right-click for settings")
+    : (root.clickState === 0
+      ? "Right-click for settings"
+      : root.clickState === 1
+        ? "Click again to pin · Right-click for settings"
+        : root.clickState === 2
+          ? "Click to unpin · Right-click for settings"
+          : "Click to close · Right-click for settings")
 
   readonly property string helperPath: decodeURIComponent(
     Qt.resolvedUrl("bisaiko").toString().replace(/^file:\/\//, "")
@@ -65,6 +77,7 @@ BarWidget {
     persisted.pollMs = defaultPollMs
     persisted.hoverEnabled = true
     root.invoke("close")
+    root.hoverPinned = false
     Qt.callLater(function() { root.moveIcon(defaultBarSection) })
   }
 
@@ -75,6 +88,8 @@ BarWidget {
     hintShown = false
     if (root.bar) root.bar.hideTooltip(button)
     root.invoke("close")
+    root.hoverPinned = false
+    root.clickState = 0
     root.refreshBarSection()
     root.settingsOpen = !root.settingsOpen
   }
@@ -162,12 +177,13 @@ BarWidget {
     onTooltipHoveredChanged: {
       if (tooltipHovered) {
         if (persisted.hoverEnabled && !root.settingsOpen) hoverOpenTimer.restart()
-        if (persisted.hoverEnabled) hintTimer.restart()
+        hintTimer.restart()
       } else {
         hoverOpenTimer.stop()
         hintTimer.stop()
         hintDismissTimer.stop()
         root.hintShown = false
+        if (root.clickState !== 2) root.clickState = 0
         root.invoke("leave")
       }
     }
@@ -179,7 +195,23 @@ BarWidget {
       if (mouseButton === Qt.LeftButton) {
         hoverOpenTimer.stop()
         root.settingsOpen = false
-        root.invokeWithSettings("toggle")
+        if (persisted.hoverEnabled) {
+          root.invokeWithSettings("toggle")
+          root.hoverPinned = !root.hoverPinned
+          root.clickState = 0
+        } else if (root.clickState === 1) {
+          root.clickState = 2
+          root.invokeWithSettings("pin")
+        } else if (root.clickState === 2) {
+          root.clickState = 3
+          root.invokeWithSettings("unpin")
+        } else if (root.clickState === 3) {
+          root.clickState = 0
+          root.invoke("close")
+        } else {
+          root.clickState = 1
+          root.invokeWithSettings("open")
+        }
       } else if (mouseButton === Qt.RightButton) {
         root.toggleSettings()
       }
@@ -283,6 +315,23 @@ BarWidget {
         font.bold: true
       }
 
+      Button {
+        width: parent.width
+        text: "Hover preview: " + (persisted.hoverEnabled ? "On" : "Off")
+        selected: persisted.hoverEnabled
+        foreground: root.bar.foreground
+        onClicked: {
+          persisted.hoverEnabled = !persisted.hoverEnabled
+          if (!persisted.hoverEnabled) {
+            hoverOpenTimer.stop()
+            hintTimer.stop()
+            hintDismissTimer.stop()
+            root.hintShown = false
+            root.invoke("leave")
+          }
+        }
+      }
+
       Text {
         text: "Window position"
         color: root.bar.foreground
@@ -359,23 +408,6 @@ BarWidget {
         font.family: root.bar.fontFamily
         font.pixelSize: Style.font.body
         font.bold: true
-      }
-
-      Button {
-        width: parent.width
-        text: "Hover preview: " + (persisted.hoverEnabled ? "On" : "Off")
-        selected: persisted.hoverEnabled
-        foreground: root.bar.foreground
-        onClicked: {
-          persisted.hoverEnabled = !persisted.hoverEnabled
-          if (!persisted.hoverEnabled) {
-            hoverOpenTimer.stop()
-            hintTimer.stop()
-            hintDismissTimer.stop()
-            root.hintShown = false
-            root.invoke("leave")
-          }
-        }
       }
 
       Row {
