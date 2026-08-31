@@ -14,6 +14,18 @@ For faster repeat openings, Bisaikō automatically uses Foot's socket-activated
 server when `footclient` and `$XDG_RUNTIME_DIR/foot.sock` are available. It
 falls back to launching Foot normally otherwise.
 
+## Install from the Omarchy plugin marketplace
+
+Install and enable Bisaikō directly from its public repository:
+
+```bash
+omarchy plugin add https://github.com/prusso/bisaiko.git --enable
+```
+
+Then add `{ "id": "prusso.bisaiko" }` to the desired bar section in
+`~/.config/omarchy/shell.json` and add the rule from `hyprland.lua` to the
+personal overrides at the bottom of `~/.config/hypr/hyprland.lua`.
+
 ## Install locally
 
 Copy `plugin/` to `~/.config/omarchy/plugins/prusso.bisaiko/`, make the
