@@ -39,9 +39,10 @@ placement, and the settings menu can move it later.
 - Right-click the icon to open Bisaikō settings.
 - Changing workspaces or opening a special/scratchpad workspace closes it.
 
-Leave the pointer over the icon for about 800 ms to reveal a controls hint.
-This works every time, while quick hovers retain the configured fast opening
-delay and remain uncluttered.
+After Omarchy's standard hover delay, a compact one-line hint explains the
+click-to-pin and right-click-for-settings controls without presenting Bisaikō
+as multiple bar icons. Its typography matches Omarchy's native tooltips, while
+its total height is reduced by 39.25% so it obscures less of the preview.
 
 ## Settings
 

@@ -10,7 +10,6 @@ BarWidget {
 
   readonly property int defaultOpenDelayMs: 50
   readonly property int defaultPollMs: 80
-  readonly property int dwellHintRequestMs: 400
   readonly property string defaultPopupPosition: "top-center"
   readonly property string defaultBarSection: "center"
   readonly property var positionOptions: [
@@ -26,7 +25,9 @@ BarWidget {
   ]
 
   property bool settingsOpen: false
+  property bool hintShown: false
   property string actualBarSection: ""
+  readonly property string controlsHint: "Click to pin · Right-click for settings"
 
   readonly property string helperPath: decodeURIComponent(
     Qt.resolvedUrl("bisaiko").toString().replace(/^file:\/\//, "")
@@ -64,6 +65,17 @@ BarWidget {
     persisted.pollMs = defaultPollMs
     root.invoke("close")
     Qt.callLater(function() { root.moveIcon(defaultBarSection) })
+  }
+
+  function toggleSettings() {
+    hoverOpenTimer.stop()
+    hintTimer.stop()
+    hintDismissTimer.stop()
+    hintShown = false
+    if (root.bar) root.bar.hideTooltip(button)
+    root.invoke("close")
+    root.refreshBarSection()
+    root.settingsOpen = !root.settingsOpen
   }
 
   implicitWidth: button.implicitWidth
@@ -112,27 +124,30 @@ BarWidget {
   }
 
   Timer {
-    id: tooltipDismissTimer
-    interval: 200
-    repeat: false
-    onTriggered: if (root.bar) root.bar.hideTooltip(button)
-  }
-
-  // The shell adds its own 400 ms tooltip delay. Requesting the hint after
-  // another 400 ms makes it a repeatable, deliberate-hover affordance without
-  // slowing the 50 ms btop preview.
-  Timer {
-    id: dwellHintTimer
-    interval: root.dwellHintRequestMs
-    repeat: false
-    onTriggered: if (root.bar) root.bar.showTooltip(button, button.tooltipText)
-  }
-
-  Timer {
     id: hoverOpenTimer
     interval: persisted.openDelayMs
     repeat: false
     onTriggered: root.invokeWithSettings("enter")
+  }
+
+  Timer {
+    id: hintTimer
+    // Keep the hint unobtrusive: require a sustained hover before showing it.
+    interval: 1200
+    repeat: false
+    onTriggered: {
+      if (button.tooltipHovered) {
+        root.hintShown = true
+        hintDismissTimer.restart()
+      }
+    }
+  }
+
+  Timer {
+    id: hintDismissTimer
+    interval: 1500
+    repeat: false
+    onTriggered: root.hintShown = false
   }
 
   BarIconButton {
@@ -140,34 +155,97 @@ BarWidget {
     anchors.fill: parent
     bar: root.bar
     text: "󰍛"
-    tooltipText: "Bisaikō\nHover to preview · Click to pin · Right-click for settings"
+    tooltipText: ""
 
     onTooltipHoveredChanged: {
       if (tooltipHovered) {
         if (!root.settingsOpen) hoverOpenTimer.restart()
-        tooltipDismissTimer.restart()
-        if (!root.settingsOpen) dwellHintTimer.restart()
+        hintTimer.restart()
       } else {
         hoverOpenTimer.stop()
-        tooltipDismissTimer.stop()
-        dwellHintTimer.stop()
+        hintTimer.stop()
+        hintDismissTimer.stop()
+        root.hintShown = false
         root.invoke("leave")
       }
     }
 
     onPressed: function(mouseButton) {
-      dwellHintTimer.stop()
+      hintTimer.stop()
+      hintDismissTimer.stop()
+      root.hintShown = false
       if (mouseButton === Qt.LeftButton) {
         hoverOpenTimer.stop()
         root.settingsOpen = false
         root.invokeWithSettings("toggle")
       } else if (mouseButton === Qt.RightButton) {
-        hoverOpenTimer.stop()
-        tooltipDismissTimer.stop()
-        if (root.bar) root.bar.hideTooltip(button)
-        root.invoke("close")
-        root.refreshBarSection()
-        root.settingsOpen = !root.settingsOpen
+        root.toggleSettings()
+      }
+    }
+  }
+
+  PopupWindow {
+    id: hintWindow
+
+    visible: root.hintShown && button.tooltipHovered && root.bar !== null
+    color: "transparent"
+    implicitWidth: Math.ceil(hintBubble.implicitWidth)
+    implicitHeight: Math.ceil(hintBubble.implicitHeight)
+
+    anchor {
+      id: hintAnchor
+      window: root.bar ? root.bar.targetWindow(button) : null
+      adjustment: PopupAdjustment.Slide
+      edges: Edges.Top | Edges.Left
+      gravity: Edges.Bottom | Edges.Right
+      rect.width: 1
+      rect.height: 1
+
+      onAnchoring: {
+        if (!root.bar) return
+
+        var popupWidth = hintWindow.implicitWidth
+        var popupHeight = hintWindow.implicitHeight
+        var localX = button.width / 2 - popupWidth / 2
+        var localY = button.height + 6
+
+        if (root.bar.position === "bottom") {
+          localY = -popupHeight - 6
+        } else if (root.bar.position === "left") {
+          localX = button.width + 6
+          localY = button.height / 2 - popupHeight / 2
+        } else if (root.bar.position === "right") {
+          localX = -popupWidth - 6
+          localY = button.height / 2 - popupHeight / 2
+        }
+
+        var barWindow = root.bar.targetWindow(button)
+        if (!barWindow) return
+        var point = barWindow.contentItem.mapFromItem(button, localX, localY)
+        hintAnchor.rect.x = Math.round(point.x)
+        hintAnchor.rect.y = Math.round(point.y)
+      }
+    }
+
+    BorderSurface {
+      id: hintBubble
+      implicitWidth: hintLabel.implicitWidth + 20
+      // Match Omarchy's standard tooltip typography while reducing its total
+      // height by exactly 25 percent for Bisaikō only.
+      implicitHeight: Math.ceil((hintLabel.implicitHeight + 14) * 0.6075)
+      color: Color.tooltip.background
+      borderSpec: Border.surfaceSpec("tooltip", "border", Color.tooltip.border, 1)
+      radius: Style.cornerRadius
+
+      Text {
+        id: hintLabel
+        anchors.centerIn: parent
+        text: root.controlsHint
+        color: Color.tooltip.text
+        font.family: root.bar ? root.bar.fontFamily : Style.font.family
+        font.pixelSize: Style.font.body
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
       }
     }
   }
