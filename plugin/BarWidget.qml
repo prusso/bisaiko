@@ -222,6 +222,15 @@ BarWidget {
         var barWindow = root.bar.targetWindow(button)
         if (!barWindow) return
         var point = barWindow.contentItem.mapFromItem(button, localX, localY)
+
+        // Keep the hint fully on-screen for every bar orientation. Horizontal
+        // bars need horizontal clamping; vertical bars need vertical clamping.
+        if (root.bar.position === "top" || root.bar.position === "bottom") {
+          point.x = Math.max(0, Math.min(point.x, barWindow.width - popupWidth))
+        } else {
+          point.y = Math.max(0, Math.min(point.y, barWindow.height - popupHeight))
+        }
+
         hintAnchor.rect.x = Math.round(point.x)
         hintAnchor.rect.y = Math.round(point.y)
       }
