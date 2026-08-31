@@ -29,8 +29,9 @@ personal overrides at the bottom of `~/.config/hypr/hyprland.lua`.
 
 ## Install locally
 
-Copy `plugin/` to `~/.config/omarchy/plugins/prusso.bisaiko/`, make the
-`bisaiko` helper executable, and add `{ "id": "prusso.bisaiko" }` to the
+Copy `BarWidget.qml`, `bisaiko`, and `manifest.json` to
+`~/.config/omarchy/plugins/prusso.bisaiko/`, make the `bisaiko` helper
+executable, and add `{ "id": "prusso.bisaiko" }` to the
 desired bar section in `~/.config/omarchy/shell.json`. To install under a
 different id, change it in all three places: the directory name, the
 `moduleName` in `BarWidget.qml`, and `module_name` in the `bisaiko` helper.
