@@ -4,7 +4,6 @@ Bisaikō is an Omarchy bar plugin that previews `btop` in an 80×24 terminal
 anchored beneath its icon. Hover to preview it, click to pin it, and click again
 to close it. Right-click the icon to configure the popup and icon placement.
 
-![Bisaikō preview](preview.png)
 
 ## Requirements
 
