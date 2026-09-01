@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "prusso.bisaiko",
   "name": "Bisaikō",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "author": "prusso",
   "license": "MIT",
   "description": "A configurable hoverable, pinnable btop popup for the Omarchy bar.",

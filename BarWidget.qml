@@ -76,6 +76,7 @@ BarWidget {
     persisted.openDelayMs = defaultOpenDelayMs
     persisted.pollMs = defaultPollMs
     persisted.hoverEnabled = true
+    persisted.tooltipEnabled = true
     root.invoke("close")
     root.hoverPinned = false
     Qt.callLater(function() { root.moveIcon(defaultBarSection) })
@@ -104,7 +105,10 @@ BarWidget {
     }
     if (persisted.settingsVersion < 2 && persisted.popupPosition === "top-right")
       persisted.popupPosition = defaultPopupPosition
-    persisted.settingsVersion = 2
+    if (persisted.settingsVersion < 3) {
+      persisted.tooltipEnabled = true
+    }
+    persisted.settingsVersion = 3
     root.refreshBarSection()
   }
 
@@ -115,6 +119,7 @@ BarWidget {
     property int openDelayMs: root.defaultOpenDelayMs
     property int pollMs: root.defaultPollMs
     property bool hoverEnabled: true
+    property bool tooltipEnabled: true
     property int settingsVersion: 0
   }
 
@@ -153,7 +158,7 @@ BarWidget {
     interval: 1200
     repeat: false
     onTriggered: {
-      if (button.tooltipHovered) {
+      if (button.tooltipHovered && persisted.tooltipEnabled) {
         root.hintShown = true
         hintDismissTimer.restart()
       }
@@ -162,7 +167,7 @@ BarWidget {
 
   Timer {
     id: hintDismissTimer
-    interval: 1500
+    interval: 1200
     repeat: false
     onTriggered: root.hintShown = false
   }
@@ -328,6 +333,21 @@ BarWidget {
             hintDismissTimer.stop()
             root.hintShown = false
             root.invoke("leave")
+          }
+        }
+      }
+
+      Button {
+        width: parent.width
+        text: "Tooltip: " + (persisted.tooltipEnabled ? "On" : "Off")
+        selected: persisted.tooltipEnabled
+        foreground: root.bar.foreground
+        onClicked: {
+          persisted.tooltipEnabled = !persisted.tooltipEnabled
+          if (!persisted.tooltipEnabled) {
+            hintTimer.stop()
+            hintDismissTimer.stop()
+            root.hintShown = false
           }
         }
       }
