@@ -77,9 +77,26 @@ BarWidget {
     persisted.pollMs = defaultPollMs
     persisted.hoverEnabled = true
     persisted.tooltipEnabled = true
+    settingsFile.writeAdapter()
     root.invoke("close")
     root.hoverPinned = false
     Qt.callLater(function() { root.moveIcon(defaultBarSection) })
+  }
+
+  // Migrations only run once real disk state has loaded (or once a fresh
+  // file has been confirmed missing), so a mid-load default value never
+  // gets mistaken for a genuinely old setting.
+  function applySettingsMigrations() {
+    if (persisted.settingsVersion < 1) {
+      if (persisted.pollMs === 78) persisted.pollMs = defaultPollMs
+    }
+    if (persisted.settingsVersion < 2 && persisted.popupPosition === "top-right")
+      persisted.popupPosition = defaultPopupPosition
+    if (persisted.settingsVersion < 3) {
+      persisted.tooltipEnabled = true
+    }
+    persisted.settingsVersion = 3
+    settingsFile.writeAdapter()
   }
 
   function toggleSettings() {
@@ -99,28 +116,39 @@ BarWidget {
   implicitHeight: button.implicitHeight
 
   Component.onDestruction: root.invoke("close")
-  Component.onCompleted: {
-    if (persisted.settingsVersion < 1) {
-      if (persisted.pollMs === 78) persisted.pollMs = defaultPollMs
-    }
-    if (persisted.settingsVersion < 2 && persisted.popupPosition === "top-right")
-      persisted.popupPosition = defaultPopupPosition
-    if (persisted.settingsVersion < 3) {
-      persisted.tooltipEnabled = true
-    }
-    persisted.settingsVersion = 3
-    root.refreshBarSection()
-  }
+  Component.onCompleted: root.refreshBarSection()
 
-  PersistentProperties {
-    id: persisted
-    reloadableId: "prusso-bisaiko-settings"
-    property string popupPosition: root.defaultPopupPosition
-    property int openDelayMs: root.defaultOpenDelayMs
-    property int pollMs: root.defaultPollMs
-    property bool hoverEnabled: true
-    property bool tooltipEnabled: true
-    property int settingsVersion: 0
+  // Settings live in their own JSON file rather than Quickshell's
+  // PersistentProperties: that mechanism only survives Quickshell's own live
+  // config hot-reload (it shares the Reloadable base with LazyLoader/Scope),
+  // not a plugin disable/enable cycle or a full shell restart. FileView +
+  // JsonAdapter is genuine disk-backed persistence, so settings now survive
+  // both.
+  readonly property string settingsPath:
+    Quickshell.env("HOME") + "/.config/omarchy/prusso.bisaiko-settings.json"
+
+  FileView {
+    id: settingsFile
+    path: root.settingsPath
+    watchChanges: true
+    preload: true
+
+    onLoaded: root.applySettingsMigrations()
+    onLoadFailed: function(error) {
+      // No settings file yet (first run on this machine): apply migrations
+      // against the built-in defaults above, then create the file.
+      if (error === FileViewError.FileNotFound) root.applySettingsMigrations()
+    }
+
+    JsonAdapter {
+      id: persisted
+      property string popupPosition: root.defaultPopupPosition
+      property int openDelayMs: root.defaultOpenDelayMs
+      property int pollMs: root.defaultPollMs
+      property bool hoverEnabled: true
+      property bool tooltipEnabled: true
+      property int settingsVersion: 0
+    }
   }
 
   Process {
@@ -327,6 +355,7 @@ BarWidget {
         foreground: root.bar.foreground
         onClicked: {
           persisted.hoverEnabled = !persisted.hoverEnabled
+          settingsFile.writeAdapter()
           if (!persisted.hoverEnabled) {
             hoverOpenTimer.stop()
             hintTimer.stop()
@@ -344,6 +373,7 @@ BarWidget {
         foreground: root.bar.foreground
         onClicked: {
           persisted.tooltipEnabled = !persisted.tooltipEnabled
+          settingsFile.writeAdapter()
           if (!persisted.tooltipEnabled) {
             hintTimer.stop()
             hintDismissTimer.stop()
@@ -379,6 +409,7 @@ BarWidget {
             horizontalPadding: Style.space(5)
             onClicked: {
               persisted.popupPosition = modelData.value
+              settingsFile.writeAdapter()
               root.invoke("close")
             }
           }
@@ -446,7 +477,10 @@ BarWidget {
           id: openLess
           text: "−"
           foreground: root.bar.foreground
-          onClicked: persisted.openDelayMs = Math.max(0, persisted.openDelayMs - 5)
+          onClicked: {
+            persisted.openDelayMs = Math.max(0, persisted.openDelayMs - 5)
+            settingsFile.writeAdapter()
+          }
         }
         Text {
           id: openValue
@@ -462,7 +496,10 @@ BarWidget {
           id: openMore
           text: "+"
           foreground: root.bar.foreground
-          onClicked: persisted.openDelayMs = Math.min(500, persisted.openDelayMs + 5)
+          onClicked: {
+            persisted.openDelayMs = Math.min(500, persisted.openDelayMs + 5)
+            settingsFile.writeAdapter()
+          }
         }
       }
 
@@ -482,7 +519,10 @@ BarWidget {
           id: pollLess
           text: "−"
           foreground: root.bar.foreground
-          onClicked: persisted.pollMs = Math.max(10, persisted.pollMs - 1)
+          onClicked: {
+            persisted.pollMs = Math.max(10, persisted.pollMs - 1)
+            settingsFile.writeAdapter()
+          }
         }
         Text {
           id: pollValue
@@ -498,7 +538,10 @@ BarWidget {
           id: pollMore
           text: "+"
           foreground: root.bar.foreground
-          onClicked: persisted.pollMs = Math.min(500, persisted.pollMs + 1)
+          onClicked: {
+            persisted.pollMs = Math.min(500, persisted.pollMs + 1)
+            settingsFile.writeAdapter()
+          }
         }
       }
 

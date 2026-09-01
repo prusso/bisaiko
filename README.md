@@ -79,8 +79,8 @@ Hover preview can be turned off in the settings menu when you prefer to open
 Bisaikō only with a click. Clicking the icon still toggles the popup while
 hover preview is disabled.
 
-These preferences persist across shell reloads and logins through Quickshell's
-per-user persistent properties.
+These preferences persist across shell reloads and logins in
+`~/.config/omarchy/prusso.bisaiko-settings.json`.
 
 The helper serializes state changes so rapid hover/click events cannot create
 multiple btop windows. Position-specific app IDs let Hyprland place each popup
