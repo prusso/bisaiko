@@ -4,23 +4,70 @@ set -u
 
 app_id="org.omarchy.bisaiko"
 module_name="prusso.bisaiko"
-runtime_root="${XDG_RUNTIME_DIR:-/tmp}"
-state_dir="${runtime_root}/bisaiko-${UID}"
+
+die() {
+  printf 'bisaiko: %s\n' "$1" >&2
+  exit 1
+}
+
+# True only when "$1" is a real directory (not a symlink) exclusively owned by
+# the current user with 0700 permissions.
+is_private_dir() {
+  local path="$1" info
+  [[ -n "$path" && -d "$path" && ! -L "$path" ]] || return 1
+  info="$(stat -c '%u %a' "$path" 2>/dev/null)" || return 1
+  [[ "$info" == "${UID} 700" ]]
+}
+
+# Pick a base directory for runtime state. Prefer a properly private
+# XDG_RUNTIME_DIR; otherwise fall back to /tmp but never trust a pre-existing
+# path there without validating ownership, permissions, and that it is not a
+# symlink planted by another user.
+resolve_state_dir() {
+  local base dir
+  if [[ -n "${XDG_RUNTIME_DIR:-}" ]] && is_private_dir "${XDG_RUNTIME_DIR}"; then
+    base="${XDG_RUNTIME_DIR}"
+  else
+    base="/tmp"
+  fi
+  dir="${base}/bisaiko-${UID}"
+  if [[ -L "$dir" ]]; then
+    die "refusing to use ${dir}: it is a symlink"
+  elif [[ -e "$dir" ]]; then
+    is_private_dir "$dir" ||
+      die "refusing to use ${dir}: not a private directory owned by uid ${UID} with mode 700"
+  else
+    (umask 077 && mkdir "$dir") || die "could not create ${dir}"
+    is_private_dir "$dir" || die "created ${dir} but it is not private"
+  fi
+  printf '%s' "$dir"
+}
+
+state_dir="$(resolve_state_dir)" || exit 1
+[[ -n "$state_dir" ]] || die "could not resolve a private runtime directory"
 lock_file="${state_dir}/lock"
 pid_file="${state_dir}/pid"
 token_file="${state_dir}/token"
 pinned_file="${state_dir}/pinned"
 hover_file="${state_dir}/hover"
 workspace_file="${state_dir}/workspace"
+
+# Only trust an external foot control socket when it lives in a genuinely
+# private runtime directory. In the /tmp fallback we never connect to a
+# predictable socket path another user could have created.
+if [[ -n "${XDG_RUNTIME_DIR:-}" ]] && is_private_dir "${XDG_RUNTIME_DIR}"; then
+  runtime_root="${XDG_RUNTIME_DIR%/}"
+else
+  runtime_root=""
+fi
+
 self_path="$(readlink -f "$0")"
 shell_config="${XDG_CONFIG_HOME:-${HOME}/.config}/omarchy/shell.json"
-
-mkdir -p -m 700 "$state_dir"
 
 read_state() {
   local path="$1"
   local fallback="$2"
-  if [[ -r "$path" ]]; then
+  if [[ -f "$path" && ! -L "$path" && -r "$path" ]]; then
     IFS= read -r state_value < "$path"
     printf '%s' "${state_value:-$fallback}"
   else
@@ -91,7 +138,7 @@ close_popup() {
   address="$(jq -r '.address // empty' <<< "$client" 2>/dev/null)"
 
   popup_pid=""
-  if [[ -r "$pid_file" ]]; then
+  if [[ -f "$pid_file" && ! -L "$pid_file" ]]; then
     popup_pid="$(read_state "$pid_file" "")"
   fi
 
@@ -137,7 +184,7 @@ open_popup() {
   write_state "$pinned_file" "$pin_mode"
   write_state "$workspace_file" "$workspace"
 
-  if command -v footclient >/dev/null 2>&1 && [[ -S "${runtime_root}/foot.sock" ]]; then
+  if [[ -n "$runtime_root" ]] && command -v footclient >/dev/null 2>&1 && [[ -S "${runtime_root}/foot.sock" ]]; then
     terminal=(footclient --server-socket="${runtime_root}/foot.sock")
   fi
 

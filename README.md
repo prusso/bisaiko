@@ -95,3 +95,11 @@ Bisaikō rule from `~/.config/hypr/hyprland.lua`.
 
 The popup is a real Foot terminal rather than an imitation of btop. Its watcher
 exists only while the popup is open and exits when the terminal closes.
+
+Runtime state (lock, PID, and hover/pin flags) lives in
+`$XDG_RUNTIME_DIR/bisaiko-$UID`. When `$XDG_RUNTIME_DIR` is unset or is not a
+private directory, Bisaikō falls back to `/tmp/bisaiko-$UID`, which it creates
+with mode `700` and refuses to use if the path already exists as a symlink or
+as a directory not privately owned by the current user. The PID read before
+any `kill` is only taken from a regular, non-symlink file inside that
+validated directory.
