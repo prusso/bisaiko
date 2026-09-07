@@ -5,7 +5,7 @@
   "version": "0.3.7",
   "author": "prusso",
   "license": "MIT",
-  "description": "A configurable hoverable, pinnable btop popup for the Omarchy bar.",
+  "description": "A configurable hoverable, pinnable btop popup for the Omarchy bar. Setup: after installing, copy the window rule from this repo's hyprland.lua into your own ~/.config/hypr/hyprland.lua and reload Hyprland -- required for the popup to float and position correctly (see README for details).",
   "kinds": ["bar-widget"],
   "activation": "on-demand",
   "entryPoints": {
